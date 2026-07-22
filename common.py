@@ -151,6 +151,7 @@ class GroupBatchSampler(Sampler[list[int]]):
 def add_common_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--domain", choices=("assay", "scaffold", "size"), default="assay")
     parser.add_argument("--subset", choices=("core", "general", "refined"), default="core")
+    parser.add_argument("--endpoint", choices=("ic50", "ec50"), default="ic50")
     parser.add_argument(
         "--dataset",
         default=None,
@@ -161,7 +162,7 @@ def add_common_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--device", default="auto", help="auto, cpu, cuda, or cuda:N")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=0.0)
@@ -207,7 +208,7 @@ def resolve_device(name: str) -> torch.device:
 
 
 def dataset_stem(args: argparse.Namespace) -> str:
-    return args.dataset or f"drugood_lbap_{args.subset}_ic50_{args.domain}"
+    return args.dataset or f"drugood_lbap_{args.subset}_{args.endpoint}_{args.domain}"
 
 
 def load_splits(args: argparse.Namespace) -> Dict[str, CachedDrugOOD]:

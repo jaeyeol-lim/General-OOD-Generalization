@@ -48,7 +48,7 @@ python3 sweep_groupdro.py --domains assay scaffold size --seeds 1 2 3 4
 탐색 스크립트가 모르는 추가 학습 인자는 그대로 각 학습 파일로 전달된다.
 
 ```bash
-python3 sweep_irm.py --domains assay --seeds 1 -- --epochs 50 --batch-size 64
+python3 sweep_irm.py --domains assay --seeds 1 -- --epochs 50 --batch-size 128
 ```
 
 `--max-parallel`의 기본값은 GPU 메모리 충돌을 피하기 위해 `1`이다. 병렬 실행 시에는 각 프로세스가 동일한 `--device`를 사용한다는 점에 유의한다.
@@ -61,7 +61,7 @@ python3 sweep_irm.py --domains assay --seeds 1 -- --epochs 50 --batch-size 64
 - IRM, V-REx, GroupDRO 학습 배치는 서로 다른 4개 그룹을 균등하게 포함한다.
 - IRM/V-REx는 500 optimizer step 뒤 탐색 대상 penalty weight를 적용하고 Adam을 reset한다.
 - 비-ERM 방법은 standard shuffled batch로 ERM 10 epochs pretraining 후 group-balanced main training을 수행한다.
-- 공통 기본값은 Adam, learning rate `1e-3`, 최대 50 main epochs, batch size 64, early-stopping patience 10이다.
+- 공통 기본값은 Adam, learning rate `1e-3`, 최대 50 main epochs, batch size 128, early-stopping patience 10이다.
 - sweep 기본 seed는 `1 2 3 4`이며 완료 후 `sweeps/<method>/aggregate.json`에 mean/std를 자동 집계한다.
 
 수식 회귀 테스트:

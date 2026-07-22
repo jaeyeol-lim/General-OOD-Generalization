@@ -24,10 +24,11 @@ def run_sweep(
     values: Sequence[float | None] = (None,),
     argv: Sequence[str] | None = None,
 ) -> None:
-    parser = argparse.ArgumentParser(description=f"Grid search for {method} on DrugOOD IC50")
+    parser = argparse.ArgumentParser(description=f"Grid search for {method} on DrugOOD IC50/EC50")
     parser.add_argument("--domains", nargs="+", choices=("assay", "scaffold", "size"), default=["assay"])
     parser.add_argument("--seeds", nargs="+", type=int, default=[1, 2, 3, 4])
     parser.add_argument("--subset", choices=("core", "general", "refined"), default="core")
+    parser.add_argument("--endpoint", choices=("ic50", "ec50"), default="ic50")
     parser.add_argument("--data-root", type=Path, default=None)
     parser.add_argument("--output-root", type=Path, default=Path(__file__).resolve().parent / "sweeps")
     parser.add_argument("--device", default="auto")
@@ -45,6 +46,7 @@ def run_sweep(
         output_dir = (
             args.output_root
             / method
+            / args.endpoint
             / domain
             / (
                 f"{parameter.lstrip('-').replace('-', '_')}_{_value_name(value)}"
@@ -60,6 +62,8 @@ def run_sweep(
             domain,
             "--subset",
             args.subset,
+            "--endpoint",
+            args.endpoint,
             "--seed",
             str(seed),
             "--device",
@@ -113,7 +117,7 @@ def run_sweep(
             "std": statistics.pstdev(finite),
         }
 
-    aggregate = {"method": method, "seeds": args.seeds, "groups": {}}
+    aggregate = {"method": method, "endpoint": args.endpoint, "seeds": args.seeds, "groups": {}}
     for key, summaries in sorted(grouped.items()):
         aggregate["groups"][key] = {
             "runs": len(summaries),
@@ -127,7 +131,7 @@ def run_sweep(
                 summary["metrics"]["ood_test"]["roc_auc"] for summary in summaries
             ),
         }
-    aggregate_path = args.output_root / method / "aggregate.json"
+    aggregate_path = args.output_root / method / args.endpoint / "aggregate.json"
     aggregate_path.parent.mkdir(parents=True, exist_ok=True)
     aggregate_path.write_text(json.dumps(aggregate, indent=2), encoding="utf-8")
     print(f"aggregate={aggregate_path}")

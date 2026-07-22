@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import random
 import time
 from collections import defaultdict
@@ -23,14 +24,16 @@ from torch_geometric.nn import GINEConv, global_add_pool
 
 def discover_data_root() -> Path:
     """Find the DrugOOD cache on both the host and `/workspace` container layout."""
-    project_root = Path(__file__).resolve().parents[2]
+    baselines_root = Path(__file__).resolve().parents[1]
+    configured = os.environ.get("DRUGOOD_DATA_ROOT")
     candidates = (
-        project_root / "Graph-OOD-Lab" / "data" / "DrugOOD",
-        project_root / "CIGA" / "data" / "DrugOOD",
+        *((Path(configured).expanduser(),) if configured else ()),
+        baselines_root.parent / "Graph-OOD-Lab" / "data" / "DrugOOD",
         Path("/workspace/Graph-OOD-Lab/data/DrugOOD"),
-        Path("/workspace/CIGA/data/DrugOOD"),
+        Path("/home/jylim/Graph-OOD-Lab/data/DrugOOD"),
         Path("/home/jylim/project/Graph-OOD-Lab/data/DrugOOD"),
-        Path("/home/jylim/project/CIGA/data/DrugOOD"),
+        Path("/home/irteam/Graph-OOD-Lab/data/DrugOOD"),
+        Path("/home/irteam/project/Graph-OOD-Lab/data/DrugOOD"),
     )
     return next((path for path in candidates if path.is_dir()), candidates[0])
 

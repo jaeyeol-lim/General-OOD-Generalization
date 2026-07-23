@@ -170,6 +170,12 @@ def add_common_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument("--num-layers", type=int, default=4)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument(
+        "--selection-metric",
+        choices=("accuracy", "roc_auc"),
+        default="accuracy",
+        help="OOD validation metric used for checkpointing and early stopping.",
+    )
+    parser.add_argument(
         "--patience",
         type=int,
         default=10,
@@ -467,7 +473,7 @@ def train(algorithm: str, args: argparse.Namespace) -> dict:
     output_dir = args.output_dir or Path(__file__).resolve().parent / "outputs" / run_name
     output_dir.mkdir(parents=True, exist_ok=True)
     best_path = output_dir / "best.pt"
-    best_accuracy = -math.inf
+    best_value = -math.inf
     best_epoch = 0
     best_phase = "main"
     stale_epochs = 0
@@ -503,8 +509,9 @@ def train(algorithm: str, args: argparse.Namespace) -> dict:
                     f"ood_val_acc={val_metrics['accuracy']:.4f} "
                     f"ood_val_auc={val_metrics['roc_auc']:.4f}"
                 )
-            if val_metrics["accuracy"] > best_accuracy:
-                best_accuracy = val_metrics["accuracy"]
+            selection_value = val_metrics[args.selection_metric]
+            if selection_value > best_value:
+                best_value = selection_value
                 best_epoch = epoch
                 best_phase = "erm_pretrain"
                 save_checkpoint(best_path, model, args, state, best_phase, epoch)
@@ -533,8 +540,9 @@ def train(algorithm: str, args: argparse.Namespace) -> dict:
                 f"ood_val_auc={val_metrics['roc_auc']:.4f}"
             )
 
-        if val_metrics["accuracy"] > best_accuracy:
-            best_accuracy = val_metrics["accuracy"]
+        selection_value = val_metrics[args.selection_metric]
+        if selection_value > best_value:
+            best_value = selection_value
             best_epoch = epoch
             best_phase = "main"
             stale_epochs = 0
@@ -557,7 +565,10 @@ def train(algorithm: str, args: argparse.Namespace) -> dict:
         "seed": args.seed,
         "best_phase": best_phase,
         "best_epoch": best_epoch,
-        "best_ood_val_accuracy": best_accuracy,
+        "selection_metric": args.selection_metric,
+        "best_ood_val": best_value,
+        # Retained for compatibility with the original general sweep reports.
+        "best_ood_val_accuracy": metrics["ood_val"]["accuracy"],
         "metrics": metrics,
         "args": {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items()},
     }
